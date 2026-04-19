@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>國語朗讀評審工具</title>
+  <!-- 引入 Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- 引入 Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    input[type=number]::-webkit-inner-spin-button, 
+    input[type=number]::-webkit-outer-spin-button { 
+      -webkit-appearance: none; 
+      margin: 0; 
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background-color: #6ee7b7;
+      border-radius: 20px;
+    }
+    @keyframes fadeInDown {
+      from { opacity: 0; transform: translate(-50%, -20px); }
+      to { opacity: 1; transform: translate(-50%, 0); }
+    }
+    .animate-fade-in-down {
+      animation: fadeInDown 0.3s ease-out forwards;
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-[#e6fcf5] via-[#d1fae5] to-[#ccfbf1] p-4 sm:p-6 font-sans text-slate-800 min-h-screen flex flex-col">
+
+  <!-- Toast Notification -->
+  <div id="toast" class="hidden fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-emerald-800 text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-2 animate-fade-in-down">
+    <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-300"></i>
+    <span id="toastMessage"></span>
+  </div>
+
+  <!-- AI 功能提示 Modal -->
+  <div id="aiModal" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4 transition-opacity">
+    <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full text-center relative animate-fade-in-down">
+      <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
+        <i data-lucide="sparkles" class="w-8 h-8"></i>
+      </div>
+      <h3 class="text-2xl font-bold text-emerald-900 mb-2">專屬 AI 生成功能</h3>
+      <p class="text-slate-600 mb-6 leading-relaxed">
+        您目前使用的是「純紀錄版」工具。<br>
+        若要體驗 AI 自動幫您撰寫流暢、專業的評語，請前往完整的 <strong>AI 版</strong>！
+      </p>
+      <div class="flex flex-col sm:flex-row gap-3 justify-center">
+        <button onclick="closeAIModal()" class="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-xl transition-colors">
+          繼續紀錄
+        </button>
+        <a href="https://gemini.google.com/share/95d0cfa1002e" target="_blank" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition-colors flex items-center justify-center gap-2 shadow-sm shadow-emerald-200">
+          前往 AI 版體驗 <i data-lucide="external-link" class="w-4 h-4"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- 隱藏的檔案上傳 Input -->
+  <input type="file" accept=".json" id="fileInput" class="hidden" onchange="importData(event)">
+
+  <div class="max-w-7xl mx-auto space-y-6 flex flex-col min-h-[calc(100vh-3rem)] w-full">
+    
+    <!-- Header -->
+    <header class="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+      <div class="flex items-center gap-4">
+        <div class="w-12 h-12 bg-white rounded-2xl shadow-sm flex items-center justify-center text-emerald-600 flex-shrink-0">
+          <i data-lucide="book-open" class="w-7 h-7"></i>
+        </div>
+        <div>
+          <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+            <h1 class="text-xl sm:text-2xl font-bold text-emerald-900 tracking-wide">國語朗讀評審工具</h1>
+            <span class="bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-full whitespace-nowrap">純紀錄版</span>
+          </div>
+          <p class="text-xs sm:text-sm text-emerald-700/70 mt-1">專業・高效・精準 | 專為國語文競賽評審設計</p>
+        </div>
+      </div>
+      <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+        <div class="bg-white/80 backdrop-blur-sm rounded-full px-4 py-2 sm:py-2.5 flex items-center gap-2 shadow-sm border border-emerald-100 hidden sm:flex">
+          <i data-lucide="users" class="w-4 h-4 text-emerald-500"></i>
+          <span class="text-sm font-medium text-emerald-800">選手總數</span>
+          <span class="bg-emerald-100 text-emerald-800 text-sm font-bold px-3 py-1 rounded-full" id="totalStudentsCount">30</span>
+        </div>
+        <!-- 匯入匯出按鈕區 -->
+        <button onclick="document.getElementById('fileInput').click()" class="bg-white/80 hover:bg-white text-emerald-700 border border-emerald-200 rounded-full px-3 sm:px-4 py-2 sm:py-2.5 flex items-center gap-2 text-sm font-medium transition-all shadow-sm">
+          <i data-lucide="upload" class="w-4 h-4"></i>
+          <span class="hidden sm:inline">匯入設定</span>
+        </button>
+        <button onclick="exportData()" class="bg-white/80 hover:bg-white text-emerald-700 border border-emerald-200 rounded-full px-3 sm:px-4 py-2 sm:py-2.5 flex items-center gap-2 text-sm font-medium transition-all shadow-sm">
+          <i data-lucide="download" class="w-4 h-4"></i>
+          <span class="hidden sm:inline">匯出設定</span>
+        </button>
+      </div>
+    </header>
+
+    <div class="flex flex-col lg:flex-row gap-6 flex-1">
+      
+      <!-- 左側：選手名單 (座號 1-30) -->
+      <div class="w-full lg:w-[280px] flex-shrink-0 bg-white/90 backdrop-blur-sm rounded-3xl p-5 sm:p-6 shadow-sm border border-emerald-100/50 lg:h-[calc(100vh-140px)] lg:sticky lg:top-6 overflow-y-auto custom-scrollbar">
+        <h2 class="text-lg font-bold text-emerald-900 mb-6 flex items-center gap-2">
+          <i data-lucide="user-circle" class="w-5 h-5 text-emerald-700"></i> 選手座號
+        </h2>
+        <div id="studentListContainer" class="grid grid-cols-5 sm:grid-cols-6 lg:grid-cols-3 gap-2 sm:gap-3">
+          <!-- 透過 JS 動態渲染 -->
+        </div>
+      </div>
+
+      <!-- 右側：主要工作區 -->
+      <div class="flex-1 space-y-6">
+        
+        <!-- 標籤庫與設定區 -->
+        <div class="bg-white/95 backdrop-blur-sm rounded-3xl p-5 sm:p-8 shadow-sm border border-emerald-100/50">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+            <div class="flex items-center gap-4">
+              <div class="w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center text-white shadow-inner flex-shrink-0">
+                <i data-lucide="user-circle" class="w-7 h-7"></i>
+              </div>
+              <div>
+                <h2 class="text-xl sm:text-2xl font-bold text-emerald-900 flex items-baseline gap-2">
+                  第 <span id="displayCurrentId"></span> 號選手
+                </h2>
+                <p class="text-sm text-emerald-700/70 mt-1">
+                  已選取 <span id="displayTagCount" class="font-bold text-emerald-600">0</span> 個表現點
+                </p>
+              </div>
+            </div>
+            
+            <!-- 班級、姓名選填 -->
+            <div class="flex items-center gap-2 bg-emerald-50 p-2 rounded-xl border border-emerald-100">
+              <input type="text" id="inputClassId" placeholder="輸入班級(選填)" oninput="updateCurrentStudent('classId', this.value)" class="w-24 px-3 py-2 bg-white border border-emerald-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-300 outline-none">
+              <input type="text" id="inputName" placeholder="輸入姓名(選填)" oninput="updateCurrentStudent('name', this.value)" class="w-28 px-3 py-2 bg-white border border-emerald-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-300 outline-none">
+            </div>
+          </div>
+
+          <!-- 朗讀篇目 (支援全域新增) -->
+          <div class="mb-8 bg-emerald-50/50 p-4 sm:p-5 rounded-2xl border border-emerald-100">
+            <h3 class="text-sm font-bold text-emerald-800 mb-4 flex items-center gap-2">
+              <span class="w-1.5 h-4 bg-emerald-500 rounded-full"></span> 朗讀篇目
+            </h3>
+            <div id="articlesContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+              <!-- JS 渲染 -->
+            </div>
+            <!-- 新增自訂篇目 -->
+            <div class="flex gap-2">
+              <input type="text" id="newArticleInput" onkeypress="if(event.key === 'Enter') addCustomArticle()" placeholder="新增朗讀篇目 (所有選手皆可使用)..." class="flex-1 px-4 py-2.5 bg-white border border-emerald-200 rounded-xl focus:ring-2 focus:ring-emerald-300 outline-none text-sm text-slate-700">
+              <button onclick="addCustomArticle()" class="px-4 bg-emerald-200 hover:bg-emerald-300 text-emerald-900 rounded-xl flex items-center justify-center transition-colors text-sm font-medium">新增</button>
+            </div>
+          </div>
+
+          <!-- 標籤分類區 -->
+          <div id="tagsContainer" class="space-y-8">
+            <!-- JS 動態渲染各向度與標籤 -->
+          </div>
+        </div>
+
+        <!-- 輸出控制面板 -->
+        <div class="bg-white/95 backdrop-blur-sm rounded-3xl p-5 sm:p-6 shadow-sm border border-emerald-100/50 flex flex-col xl:flex-row xl:items-start gap-6 justify-between relative overflow-hidden">
+          <div class="absolute top-0 right-0 w-64 h-64 bg-emerald-400/10 rounded-full blur-3xl pointer-events-none -translate-y-1/2 translate-x-1/2"></div>
+          
+          <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-8 relative z-10 w-full xl:w-auto">
+            <!-- 語氣與字數設定 (視覺展示用，無實際AI連線) -->
+            <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
+              <span class="text-sm font-bold text-emerald-800 flex-shrink-0">語氣設定</span>
+              <div class="flex flex-wrap bg-emerald-50 p-1 rounded-xl w-full sm:w-auto">
+                <button class="flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all bg-white text-emerald-700 shadow-sm border border-emerald-100">正面鼓勵</button>
+                <button class="flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all text-emerald-700/60">中肯建議</button>
+                <button class="flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all text-emerald-700/60">嚴謹叮嚀</button>
+              </div>
+            </div>
+            <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
+              <span class="text-sm font-bold text-emerald-800 flex-shrink-0">字數長度</span>
+              <div class="flex flex-wrap bg-emerald-50 p-1 rounded-xl w-full sm:w-auto">
+                <button class="flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all text-emerald-700/60">短</button>
+                <button class="flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all bg-white text-emerald-700 shadow-sm border border-emerald-100">中</button>
+                <button class="flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all text-emerald-700/60">長</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-3 relative z-10 w-full xl:w-56">
+            <button onclick="showAIModal()" class="w-full px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-sm sm:text-base flex items-center justify-center gap-2 transition-all shadow-sm shadow-emerald-200 hover:-translate-y-0.5">
+              <i data-lucide="sparkles" class="w-4 h-4 fill-current"></i> 生成評語
+            </button>
+            <button onclick="exportToPDF()" class="w-full px-4 py-2.5 bg-white hover:bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl font-bold text-sm sm:text-base flex items-center justify-center gap-2 transition-all shadow-sm hover:-translate-y-0.5">
+              <i data-lucide="printer" class="w-4 h-4"></i> 匯出 PDF 總表
+            </button>
+            <!-- AI版連結 -->
+            <a href="https://gemini.google.com/share/95d0cfa1002e" target="_blank" class="w-full px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-xl font-bold text-sm sm:text-base flex items-center justify-center gap-2 transition-all shadow-sm hover:-translate-y-0.5">
+              <i data-lucide="external-link" class="w-4 h-4"></i> 前往 AI 版工具
+            </a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="mt-auto pt-6 pb-4 text-center border-t border-emerald-200/50">
+      <div class="flex items-center justify-center gap-2 text-rose-600 font-bold text-xs sm:text-sm mb-3 bg-white/80 backdrop-blur-sm inline-flex px-4 py-1.5 rounded-full shadow-sm border border-rose-100">
+        <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+        <span>強烈建議：使用平板請務必鎖定「螢幕方向」，以免重新載入造成資料流失！(可隨時使用匯出功能備份)</span>
+      </div>
+      <p class="text-emerald-800/60 text-xs sm:text-sm font-medium tracking-wide block">
+        &copy; <span id="currentYear"></span> 奕鈞老師 版權所有 | 國語文競賽輔助系統
+      </p>
+    </footer>
+
+  </div>
+
+  <script>
+    // === 核心資料與狀態 ===
+    const TOTAL_STUDENTS = 30;
+    let currentId = 1;
+    let customArticles = [];
+    let globalCustomTags = { 0: [], 1: [], 2: [] };
+    
+    // 初始化學生資料
+    let studentsData = Array.from({ length: TOTAL_STUDENTS }).map((_, idx) => ({
+      id: idx + 1,
+      classId: '',
+      name: '',
+      article: '',
+      selectedTags: [],
+      errorCount: 0,
+      errorPronunciation: '',
+      useErrorPronunciation: true,
+      textInterpretation: '',
+      useTextInterpretation: true,
+      generatedComment: '' // 純HTML版不產出內容，保留欄位供匯入匯出相容
+    }));
+
+    const TAG_CATEGORIES = [
+      {
+        title: '語音 (45%)：發音、聲調、語調正確性',
+        strengths: ['發音標準', '咬字清晰', '聲調正確', '語調自然', '破音字正確', '輕聲標準', '變調精準', '字正腔圓'],
+        weaknesses: ['咬字不清', '特殊口音', 'ㄣㄥ不分', 'ㄤㄢ不分', '捲舌音不明確', '不捲舌音捲舌', '聲調錯誤', '輕聲不自然', '破音字誤讀', 'ㄓㄔㄕ混淆']
+      },
+      {
+        title: '聲情 (45%)：文章理解、停頓、感情與聲音表現',
+        strengths: ['感情真摯', '停頓得宜', '聲音具穿透力', '節奏流暢', '語氣變化豐富', '充分理解文意', '抑揚頓挫', '渲染力強', '輕重緩急得宜', '聲音明亮'],
+        weaknesses: ['停頓突兀', '感情平淡', '語速過快', '語速過慢', '聲音微弱', '節奏紊亂', '讀破句', '缺乏起伏', '聲音沙啞', '忘詞', '添字', '漏字', '回讀', '尾音無力', '節奏雷同', '語調雷同']
+      },
+      {
+        title: '臺風 (10%)：儀容、態度、表情',
+        strengths: ['儀態端莊', '自信從容', '眼神自然', '表情豐富', '站姿挺拔', '具親和力', '台風穩健'],
+        weaknesses: ['眼神游移', '肢體僵硬', '捧稿姿勢不佳', '站姿歪斜', '過度緊張', '表情僵硬', '小動作多', '視線未與台下交流']
+      }
+    ];
+
+    // === UI 渲染函數 ===
+
+    // 渲染左側名單
+    function renderStudentList() {
+      const container = document.getElementById('studentListContainer');
+      let html = '';
+      studentsData.forEach(student => {
+        const isActive = student.id === currentId;
+        const hasInfo = student.name || student.classId;
+        const hasData = student.selectedTags.length > 0 || student.errorCount > 0 || student.errorPronunciation || student.textInterpretation;
+        
+        let classes = isActive 
+          ? 'bg-emerald-700 text-white border-emerald-700 shadow-md transform scale-105 z-10' 
+          : 'bg-emerald-50/50 text-emerald-800 hover:bg-emerald-100 border-emerald-100 hover:border-emerald-300';
+          
+        html += `
+          <button onclick="setCurrentId(${student.id})" class="flex flex-col items-center justify-center p-2 h-14 sm:h-16 rounded-2xl transition-all relative border ${classes}">
+            <span class="text-base sm:text-lg font-bold leading-none">${student.id}</span>
+            ${hasInfo ? `<span class="text-[10px] mt-1 whitespace-nowrap overflow-hidden text-ellipsis w-full px-1 text-center hidden sm:block ${isActive ? 'text-emerald-100' : 'text-emerald-600/70'}">${student.name || student.classId}</span>` : ''}
+            ${hasData ? `<span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full ${isActive ? 'bg-emerald-300' : 'bg-green-500'}"></span>` : ''}
+          </button>
+        `;
+      });
+      container.innerHTML = html;
+    }
+
+    // 渲染主要工作區標頭與選填內容
+    function renderMainHeader() {
+      const student = studentsData[currentId - 1];
+      document.getElementById('displayCurrentId').textContent = student.id;
+      document.getElementById('displayTagCount').textContent = student.selectedTags.length;
+      document.getElementById('inputClassId').value = student.classId;
+      document.getElementById('inputName').value = student.name;
+    }
+
+    // 渲染篇目選擇區
+    function renderArticles() {
+      const container = document.getElementById('articlesContainer');
+      const student = studentsData[currentId - 1];
+      if (customArticles.length === 0) {
+        container.innerHTML = '';
+        return;
+      }
+      
+      let html = '';
+      customArticles.forEach(article => {
+        const isSelected = student.article === article;
+        const classes = isSelected ? 'bg-emerald-100 border-emerald-300 text-emerald-800 font-medium shadow-sm' : 'bg-white border-emerald-200 text-slate-600 hover:bg-emerald-50';
+        html += `
+          <label class="flex items-start sm:items-center p-3 rounded-xl cursor-pointer transition-all border ${classes}">
+            <input type="radio" name="article" value="${article}" onchange="updateCurrentStudent('article', this.value)" ${isSelected ? 'checked' : ''} class="w-4 h-4 mt-0.5 sm:mt-0 text-emerald-600 bg-emerald-100 border-emerald-300 focus:ring-emerald-500 mr-3 flex-shrink-0">
+            <span class="text-sm sm:text-base leading-snug">${article}</span>
+          </label>
+        `;
+      });
+      container.innerHTML = html;
+    }
+
+    // 渲染標籤區 (含計數器與補充欄位)
+    function renderTags() {
+      const container = document.getElementById('tagsContainer');
+      const student = studentsData[currentId - 1];
+      let html = '';
+
+      TAG_CATEGORIES.forEach((category, idx) => {
+        html += `<div class="pb-6 border-b border-emerald-100/60 last:border-0 last:pb-0">`;
+        
+        // 標題
+        html += `
+          <div class="flex items-center gap-4 mb-4">
+            <h3 class="text-sm font-bold text-emerald-800 bg-emerald-100 px-4 py-1.5 rounded-full whitespace-nowrap">${category.title}</h3>
+            <div class="flex-1 h-px bg-emerald-200/50"></div>
+          </div>
+        `;
+
+        // 優點 (綠色)
+        html += `<div class="space-y-3"><div class="flex flex-wrap gap-2">`;
+        category.strengths.forEach(tag => {
+          const isSelected = student.selectedTags.includes(tag);
+          const classes = isSelected ? 'bg-emerald-500 border-emerald-600 text-white font-bold shadow-sm' : 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100 hover:border-emerald-300';
+          html += `<button onclick="toggleTag('${tag}')" class="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm transition-all border ${classes}">${tag}</button>`;
+        });
+        html += `</div>`;
+
+        // 缺點 (橘紅)
+        html += `<div class="flex flex-wrap gap-2">`;
+        category.weaknesses.forEach(tag => {
+          const isSelected = student.selectedTags.includes(tag);
+          const classes = isSelected ? 'bg-orange-100 border-orange-300 text-orange-800 font-bold shadow-sm' : 'bg-white border-orange-200 text-orange-600 hover:bg-orange-50 hover:border-orange-300';
+          html += `<button onclick="toggleTag('${tag}')" class="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm transition-all border ${classes}">${tag}</button>`;
+        });
+        html += `</div>`;
+
+        // 全域自訂標籤 (藍綠)
+        if (globalCustomTags[idx] && globalCustomTags[idx].length > 0) {
+          html += `<div class="flex flex-wrap gap-2 pt-2">`;
+          globalCustomTags[idx].forEach(tag => {
+            const isSelected = student.selectedTags.includes(tag);
+            const classes = isSelected ? 'bg-teal-100 border-teal-300 text-teal-800 font-bold shadow-sm' : 'bg-teal-50/40 border-teal-100 text-teal-700 hover:bg-teal-100 hover:border-teal-200';
+            html += `
+              <div class="relative group inline-block">
+                <button onclick="toggleTag('${tag}')" class="pr-8 pl-3 sm:pl-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm transition-all border ${classes}">${tag}</button>
+                <button onclick="removeGlobalCustomTag(${idx}, '${tag}')" class="absolute right-2 top-1/2 -translate-y-1/2 text-teal-400 hover:text-red-500 transition-colors p-1" title="刪除此標籤">
+                  <i data-lucide="trash-2" class="w-3 h-3"></i>
+                </button>
+              </div>`;
+          });
+          html += `</div>`;
+        }
+
+        // 新增全域標籤輸入框
+        html += `
+          <div class="flex gap-2 max-w-sm mt-2">
+            <input type="text" id="newTagInput_${idx}" placeholder="新增全域標籤..." onkeypress="if(event.key === 'Enter') addGlobalCustomTag(${idx})" class="flex-1 px-3 py-2 bg-white border border-teal-200 rounded-lg focus:ring-2 focus:ring-teal-300 outline-none text-xs text-slate-700">
+            <button onclick="addGlobalCustomTag(${idx})" class="px-3 bg-teal-500 hover:bg-teal-600 text-white rounded-lg flex items-center justify-center transition-colors text-xs font-medium shadow-sm">加入</button>
+          </div>
+        `;
+
+        // 向度 0 專屬：錯字計數器與誤讀紀錄
+        if (idx === 0) {
+          html += `
+            <div class="mt-4 p-3 bg-emerald-50/50 border border-emerald-100 rounded-xl relative">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                <div class="flex items-center gap-3">
+                  <label class="text-xs font-bold text-emerald-700 flex items-center gap-1"><i data-lucide="plus" class="w-3 h-3"></i> 記錄錯誤讀音字詞</label>
+                  <div class="flex items-center gap-1.5 bg-white px-2 py-0.5 rounded border border-emerald-200 shadow-sm">
+                    <span class="text-xs font-bold text-slate-600 mr-1">錯字</span>
+                    <button onclick="updateErrorCount(-1)" class="w-5 h-5 flex items-center justify-center bg-slate-100 hover:bg-slate-200 rounded text-slate-600 transition-colors">-</button>
+                    <span class="text-xs font-bold w-4 text-center">${student.errorCount}</span>
+                    <button onclick="updateErrorCount(1)" class="w-5 h-5 flex items-center justify-center bg-rose-100 hover:bg-rose-200 text-rose-600 rounded transition-colors">+</button>
+                  </div>
+                </div>
+                <label class="flex items-center gap-1.5 cursor-pointer text-xs text-slate-600 hover:text-emerald-700">
+                  <input type="checkbox" onchange="updateCurrentStudent('useErrorPronunciation', this.checked)" ${student.useErrorPronunciation ? 'checked' : ''} class="w-3.5 h-3.5 text-emerald-600 rounded border-emerald-300 focus:ring-emerald-500">
+                  將此欄位納入評語生成
+                </label>
+              </div>
+              <textarea oninput="updateCurrentStudent('errorPronunciation', this.value)" placeholder="例如：將「蘊」讀成「溫」、破音字「和」讀錯..." class="w-full px-3 py-2 text-sm border border-emerald-200 rounded-lg focus:ring-2 focus:ring-emerald-300 outline-none text-slate-700 resize-none h-12 bg-white">${student.errorPronunciation}</textarea>
+            </div>
+          `;
+        }
+
+        // 向度 1 專屬：文本詮釋
+        if (idx === 1) {
+          html += `
+            <div class="mt-4 p-3 bg-emerald-50/50 border border-emerald-100 rounded-xl relative">
+              <div class="flex items-center justify-between mb-2">
+                <label class="text-xs font-bold text-emerald-700 flex items-center gap-1"><i data-lucide="plus" class="w-3 h-3"></i> 文本詮釋細節補充</label>
+                <label class="flex items-center gap-1.5 cursor-pointer text-xs text-slate-600 hover:text-emerald-700">
+                  <input type="checkbox" onchange="updateCurrentStudent('useTextInterpretation', this.checked)" ${student.useTextInterpretation ? 'checked' : ''} class="w-3.5 h-3.5 text-emerald-600 rounded border-emerald-300 focus:ring-emerald-500">
+                  將此欄位納入評語生成
+                </label>
+              </div>
+              <textarea oninput="updateCurrentStudent('textInterpretation', this.value)" placeholder="例如：第三段高潮處語氣不夠激昂、結尾段落餘韻不足..." class="w-full px-3 py-2 text-sm border border-emerald-200 rounded-lg focus:ring-2 focus:ring-emerald-300 outline-none text-slate-700 resize-none h-16 bg-white">${student.textInterpretation}</textarea>
+            </div>
+          `;
+        }
+
+        html += `</div></div>`;
+      });
+
+      container.innerHTML = html;
+      lucide.createIcons();
+    }
+
+    // 更新整個畫面
+    function renderAll() {
+      renderStudentList();
+      renderMainHeader();
+      renderArticles();
+      renderTags();
+    }
+
+    // === 互動與業務邏輯 ===
+
+    // 設定當前選手
+    function setCurrentId(id) {
+      currentId = id;
+      renderAll();
+    }
+
+    // 更新當前選手資料屬性
+    function updateCurrentStudent(key, value) {
+      const student = studentsData[currentId - 1];
+      student[key] = value;
+      if (key === 'classId' || key === 'name') renderStudentList();
+    }
+
+    // 切換標籤選取
+    function toggleTag(tag) {
+      const student = studentsData[currentId - 1];
+      if (student.selectedTags.includes(tag)) {
+        student.selectedTags = student.selectedTags.filter(t => t !== tag);
+      } else {
+        student.selectedTags.push(tag);
+      }
+      renderStudentList(); // 為了更新左側亮點
+      renderMainHeader();
+      renderTags();
+    }
+
+    // 更新錯字計數
+    function updateErrorCount(delta) {
+      const student = studentsData[currentId - 1];
+      student.errorCount = Math.max(0, student.errorCount + delta);
+      renderStudentList();
+      renderTags();
+    }
+
+    // 新增篇目
+    function addCustomArticle() {
+      const input = document.getElementById('newArticleInput');
+      const val = input.value.trim();
+      if (val && !customArticles.includes(val)) {
+        customArticles.push(val);
+        input.value = '';
+        renderArticles();
+        showToast("已新增全域朗讀篇目");
+      }
+    }
+
+    // 新增全域標籤
+    function addGlobalCustomTag(idx) {
+      const input = document.getElementById(`newTagInput_${idx}`);
+      const val = input.value.trim();
+      if (val && !globalCustomTags[idx].includes(val)) {
+        globalCustomTags[idx].push(val);
+        input.value = '';
+        renderTags();
+        showToast("已新增專屬全域標籤");
+      }
+    }
+
+    // 移除全域標籤
+    function removeGlobalCustomTag(idx, tag) {
+      globalCustomTags[idx] = globalCustomTags[idx].filter(t => t !== tag);
+      studentsData.forEach(s => {
+        s.selectedTags = s.selectedTags.filter(t => t !== tag);
+      });
+      renderAll();
+    }
+
+    // === Modal 與 Toast 功能 ===
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastMessage').textContent = msg;
+      toast.classList.remove('hidden');
+      setTimeout(() => toast.classList.add('hidden'), 3000);
+    }
+
+    function showAIModal() {
+      document.getElementById('aiModal').classList.remove('hidden');
+    }
+
+    function closeAIModal() {
+      document.getElementById('aiModal').classList.add('hidden');
+    }
+
+    // === 匯入/匯出/PDF 功能 ===
+    function exportData() {
+      const data = {
+        version: 'HTML_2.2',
+        customArticles,
+        globalCustomTags,
+        studentsData
+      };
+      const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `朗讀評語設定檔_純紀錄版_${new Date().toISOString().slice(0,10)}.json`;
+      a.click();
+      showToast("已下載設定檔");
+    }
+
+    function importData(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const data = JSON.parse(event.target.result);
+          if (data.studentsData) studentsData = data.studentsData;
+          if (data.globalCustomTags) globalCustomTags = data.globalCustomTags;
+          if (data.customArticles) customArticles = data.customArticles;
+          renderAll();
+          showToast("資料匯入成功！");
+        } catch (err) {
+          showToast("匯入失敗：檔案格式錯誤");
+        }
+      };
+      reader.readAsText(file);
+      e.target.value = null; // reset
+    }
+
+    function exportToPDF() {
+      const hasDataStudents = studentsData.filter(s => 
+        s.selectedTags.length > 0 || s.article || s.name || s.classId || s.textInterpretation || s.errorPronunciation || s.errorCount > 0
+      );
+
+      if (hasDataStudents.length === 0) {
+        showToast("目前沒有任何選手資料可匯出！");
+        return;
+      }
+
+      const printWindow = window.open('', '_blank');
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>國語朗讀評語總表</title>
+            <meta charset="utf-8">
+            <style>
+              body { font-family: 'Microsoft JhengHei', 'PingFang TC', sans-serif; padding: 20px; color: #333; }
+              h1 { text-align: center; color: #047857; margin-bottom: 20px; }
+              table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 13px; }
+              th, td { border: 1px solid #a7f3d0; padding: 10px; text-align: left; vertical-align: top; }
+              th { background-color: #ecfdf5; font-weight: bold; color: #065f46; }
+              .text-center { text-align: center; }
+              .tags { color: #059669; font-size: 12px; }
+              .interpretation { color: #0d9488; font-size: 12px; font-style: italic; margin-top: 4px; }
+              .error-pron { color: #c2410c; font-size: 12px; margin-top: 4px; }
+              @media print {
+                @page { margin: 1cm; size: landscape; }
+                body { padding: 0; }
+                .no-print { display: none; }
+              }
+            </style>
+          </head>
+          <body>
+            <div class="no-print" style="background: #f0fdf4; padding: 15px; text-align: center; border: 1px solid #bbf7d0; margin-bottom: 20px; border-radius: 8px;">
+              <strong style="color: #047857;">列印提示：</strong> 請在列印對話框中，將目的地選項更改為<strong>「另存為 PDF (Save as PDF)」</strong>即可完美匯出。
+              <button onclick="window.print()" style="margin-left: 15px; padding: 6px 12px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer;">立即列印 / 存為 PDF</button>
+            </div>
+            <h1>國語朗讀評語總表 (紀錄版)</h1>
+            <table>
+              <thead>
+                <tr>
+                  <th width="5%" class="text-center">座號</th>
+                  <th width="8%" class="text-center">班級</th>
+                  <th width="12%" class="text-center">姓名</th>
+                  <th width="15%">篇目</th>
+                  <th width="60%">表現點 / 手動紀錄</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${hasDataStudents.map(s => `
+                  <tr>
+                    <td class="text-center font-bold">${s.id}</td>
+                    <td class="text-center">${s.classId || '-'}</td>
+                    <td class="text-center font-bold">${s.name || '-'}</td>
+                    <td>${s.article || '-'}</td>
+                    <td>
+                      <div class="tags">${s.selectedTags.join('、') || '-'}</div>
+                      ${s.errorCount > 0 ? `<div class="error-pron">【錯字】共讀錯 ${s.errorCount} 字</div>` : ''}
+                      ${s.errorPronunciation ? `<div class="error-pron">【誤讀】${s.errorPronunciation}</div>` : ''}
+                      ${s.textInterpretation ? `<div class="interpretation">【詮釋】${s.textInterpretation}</div>` : ''}
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+            <script>
+              window.onload = () => { setTimeout(() => window.print(), 800); }
+            <\/script>
+          </body>
+        </html>
+      `;
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+    }
+
+    // 啟動初始化
+    document.getElementById('currentYear').textContent = new Date().getFullYear();
+    renderAll();
+    lucide.createIcons();
+
+  </script>
+</body>
+</html>
