@@ -3,10 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>國語朗讀評審工具</title>
-  <!-- 引入 Tailwind CSS -->
+  <title>國語朗讀評審快記工具</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- 引入 Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
     input[type=number]::-webkit-inner-spin-button, 
@@ -33,15 +31,13 @@
     }
   </style>
 </head>
-<body class="bg-gradient-to-br from-[#e6fcf5] via-[#d1fae5] to-[#ccfbf1] p-4 sm:p-6 font-sans text-slate-800 min-h-screen flex flex-col">
+<body class="bg-gradient-to-br from-[#e6fcf5] via-[#d1fae5] to-[#ccfbf1] p-4 sm:p-6 font-sans text-slate-800 min-h-screen flex flex-col relative">
 
-  <!-- Toast Notification -->
-  <div id="toast" class="hidden fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-emerald-800 text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-2 animate-fade-in-down">
+  <div id="toast" class="hidden fixed top-6 left-1/2 -translate-x-1/2 z-[200] bg-emerald-800 text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-2 animate-fade-in-down">
     <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-300"></i>
     <span id="toastMessage"></span>
   </div>
 
-  <!-- AI 功能提示 Modal -->
   <div id="aiModal" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4 transition-opacity">
     <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full text-center relative animate-fade-in-down">
       <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -63,12 +59,10 @@
     </div>
   </div>
 
-  <!-- 隱藏的檔案上傳 Input -->
   <input type="file" accept=".json" id="fileInput" class="hidden" onchange="importData(event)">
 
   <div class="max-w-7xl mx-auto space-y-6 flex flex-col min-h-[calc(100vh-3rem)] w-full">
     
-    <!-- Header -->
     <header class="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
       <div class="flex items-center gap-4">
         <div class="w-12 h-12 bg-white rounded-2xl shadow-sm flex items-center justify-center text-emerald-600 flex-shrink-0">
@@ -76,10 +70,10 @@
         </div>
         <div>
           <div class="flex flex-wrap items-center gap-2 sm:gap-3">
-            <h1 class="text-xl sm:text-2xl font-bold text-emerald-900 tracking-wide">國語朗讀評審工具</h1>
-            <span class="bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-full whitespace-nowrap">純紀錄版</span>
+            <h1 class="text-xl sm:text-2xl font-bold text-emerald-900 tracking-wide whitespace-nowrap">國語朗讀評審快記工具</h1>
+            <span class="bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-full whitespace-nowrap">2.2版</span>
           </div>
-          <p class="text-xs sm:text-sm text-emerald-700/70 mt-1">專業・高效・精準 | 專為國語文競賽評審設計</p>
+          <p class="text-xs sm:text-sm text-emerald-700/70 mt-1">專業・高效・精準 | 自動存檔保護您的心血</p>
         </div>
       </div>
       <div class="flex flex-wrap items-center gap-2 sm:gap-3">
@@ -88,35 +82,39 @@
           <span class="text-sm font-medium text-emerald-800">選手總數</span>
           <span class="bg-emerald-100 text-emerald-800 text-sm font-bold px-3 py-1 rounded-full" id="totalStudentsCount">30</span>
         </div>
-        <!-- 匯入匯出按鈕區 -->
+        
+        <button onclick="toggleManageMode()" id="manageModeBtn" class="bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200 rounded-full px-4 py-2 sm:py-2.5 flex items-center gap-2 text-sm font-bold transition-all shadow-sm">
+          <i data-lucide="settings-2" class="w-4 h-4"></i>
+          <span id="manageModeText">標籤管理</span>
+        </button>
         <button onclick="document.getElementById('fileInput').click()" class="bg-white/80 hover:bg-white text-emerald-700 border border-emerald-200 rounded-full px-3 sm:px-4 py-2 sm:py-2.5 flex items-center gap-2 text-sm font-medium transition-all shadow-sm">
           <i data-lucide="upload" class="w-4 h-4"></i>
-          <span class="hidden sm:inline">匯入設定</span>
+          <span class="hidden sm:inline">匯入</span>
         </button>
         <button onclick="exportData()" class="bg-white/80 hover:bg-white text-emerald-700 border border-emerald-200 rounded-full px-3 sm:px-4 py-2 sm:py-2.5 flex items-center gap-2 text-sm font-medium transition-all shadow-sm">
           <i data-lucide="download" class="w-4 h-4"></i>
-          <span class="hidden sm:inline">匯出設定</span>
+          <span class="hidden sm:inline">匯出</span>
+        </button>
+        <button onclick="clearLocalStorage()" class="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-full px-3 py-2 sm:py-2.5 flex items-center gap-2 text-sm font-medium transition-all shadow-sm" title="清除所有資料與紀錄">
+          <i data-lucide="trash-2" class="w-4 h-4"></i>
         </button>
       </div>
     </header>
 
     <div class="flex flex-col lg:flex-row gap-6 flex-1">
       
-      <!-- 左側：選手名單 (座號 1-30) -->
       <div class="w-full lg:w-[280px] flex-shrink-0 bg-white/90 backdrop-blur-sm rounded-3xl p-5 sm:p-6 shadow-sm border border-emerald-100/50 lg:h-[calc(100vh-140px)] lg:sticky lg:top-6 overflow-y-auto custom-scrollbar">
         <h2 class="text-lg font-bold text-emerald-900 mb-6 flex items-center gap-2">
           <i data-lucide="user-circle" class="w-5 h-5 text-emerald-700"></i> 選手座號
         </h2>
         <div id="studentListContainer" class="grid grid-cols-5 sm:grid-cols-6 lg:grid-cols-3 gap-2 sm:gap-3">
-          <!-- 透過 JS 動態渲染 -->
-        </div>
+          </div>
       </div>
 
-      <!-- 右側：主要工作區 -->
       <div class="flex-1 space-y-6">
         
-        <!-- 標籤庫與設定區 -->
-        <div class="bg-white/95 backdrop-blur-sm rounded-3xl p-5 sm:p-8 shadow-sm border border-emerald-100/50">
+        <div class="bg-white/95 backdrop-blur-sm rounded-3xl p-5 sm:p-8 shadow-sm border border-emerald-100/50 relative">
+          
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
             <div class="flex items-center gap-4">
               <div class="w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center text-white shadow-inner flex-shrink-0">
@@ -132,40 +130,32 @@
               </div>
             </div>
             
-            <!-- 班級、姓名選填 -->
             <div class="flex items-center gap-2 bg-emerald-50 p-2 rounded-xl border border-emerald-100">
               <input type="text" id="inputClassId" placeholder="輸入班級(選填)" oninput="updateCurrentStudent('classId', this.value)" class="w-24 px-3 py-2 bg-white border border-emerald-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-300 outline-none">
               <input type="text" id="inputName" placeholder="輸入姓名(選填)" oninput="updateCurrentStudent('name', this.value)" class="w-28 px-3 py-2 bg-white border border-emerald-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-300 outline-none">
             </div>
           </div>
 
-          <!-- 朗讀篇目 (支援全域新增) -->
-          <div class="mb-8 bg-emerald-50/50 p-4 sm:p-5 rounded-2xl border border-emerald-100">
+          <div id="articleSection" class="mb-8 bg-emerald-50/50 p-4 sm:p-5 rounded-2xl border border-emerald-100 transition-all">
             <h3 class="text-sm font-bold text-emerald-800 mb-4 flex items-center gap-2">
               <span class="w-1.5 h-4 bg-emerald-500 rounded-full"></span> 朗讀篇目
             </h3>
             <div id="articlesContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-              <!-- JS 渲染 -->
-            </div>
-            <!-- 新增自訂篇目 -->
+              </div>
             <div class="flex gap-2">
               <input type="text" id="newArticleInput" onkeypress="if(event.key === 'Enter') addCustomArticle()" placeholder="新增朗讀篇目 (所有選手皆可使用)..." class="flex-1 px-4 py-2.5 bg-white border border-emerald-200 rounded-xl focus:ring-2 focus:ring-emerald-300 outline-none text-sm text-slate-700">
               <button onclick="addCustomArticle()" class="px-4 bg-emerald-200 hover:bg-emerald-300 text-emerald-900 rounded-xl flex items-center justify-center transition-colors text-sm font-medium">新增</button>
             </div>
           </div>
 
-          <!-- 標籤分類區 -->
-          <div id="tagsContainer" class="space-y-8">
-            <!-- JS 動態渲染各向度與標籤 -->
-          </div>
+          <div id="tagsContainer" class="space-y-6">
+            </div>
         </div>
 
-        <!-- 輸出控制面板 -->
         <div class="bg-white/95 backdrop-blur-sm rounded-3xl p-5 sm:p-6 shadow-sm border border-emerald-100/50 flex flex-col xl:flex-row xl:items-start gap-6 justify-between relative overflow-hidden">
           <div class="absolute top-0 right-0 w-64 h-64 bg-emerald-400/10 rounded-full blur-3xl pointer-events-none -translate-y-1/2 translate-x-1/2"></div>
           
           <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-8 relative z-10 w-full xl:w-auto">
-            <!-- 語氣與字數設定 (視覺展示用，無實際AI連線) -->
             <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
               <span class="text-sm font-bold text-emerald-800 flex-shrink-0">語氣設定</span>
               <div class="flex flex-wrap bg-emerald-50 p-1 rounded-xl w-full sm:w-auto">
@@ -191,7 +181,6 @@
             <button onclick="exportToPDF()" class="w-full px-4 py-2.5 bg-white hover:bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl font-bold text-sm sm:text-base flex items-center justify-center gap-2 transition-all shadow-sm hover:-translate-y-0.5">
               <i data-lucide="printer" class="w-4 h-4"></i> 匯出 PDF 總表
             </button>
-            <!-- AI版連結 -->
             <a href="https://gemini.google.com/share/95d0cfa1002e" target="_blank" class="w-full px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-xl font-bold text-sm sm:text-base flex items-center justify-center gap-2 transition-all shadow-sm hover:-translate-y-0.5">
               <i data-lucide="external-link" class="w-4 h-4"></i> 前往 AI 版工具
             </a>
@@ -201,11 +190,10 @@
       </div>
     </div>
 
-    <!-- Footer -->
     <footer class="mt-auto pt-6 pb-4 text-center border-t border-emerald-200/50">
-      <div class="flex items-center justify-center gap-2 text-rose-600 font-bold text-xs sm:text-sm mb-3 bg-white/80 backdrop-blur-sm inline-flex px-4 py-1.5 rounded-full shadow-sm border border-rose-100">
-        <i data-lucide="alert-triangle" class="w-4 h-4"></i>
-        <span>強烈建議：使用平板請務必鎖定「螢幕方向」，以免重新載入造成資料流失！(可隨時使用匯出功能備份)</span>
+      <div class="flex items-center justify-center gap-2 text-emerald-700 font-bold text-xs sm:text-sm mb-3 bg-white/80 backdrop-blur-sm inline-flex px-4 py-1.5 rounded-full shadow-sm border border-emerald-100">
+        <i data-lucide="save" class="w-4 h-4"></i>
+        <span>系統已啟用 LocalStorage 自動存檔機制，資料將安全保存在您的設備中。</span>
       </div>
       <p class="text-emerald-800/60 text-xs sm:text-sm font-medium tracking-wide block">
         &copy; <span id="currentYear"></span> 奕鈞老師 版權所有 | 國語文競賽輔助系統
@@ -217,9 +205,12 @@
   <script>
     // === 核心資料與狀態 ===
     const TOTAL_STUDENTS = 30;
+    const LS_KEY = 'ReadingJudgeTool_v2.2_Data'; 
+    
     let currentId = 1;
+    let isManageMode = false; // 標籤管理模式
     let customArticles = [];
-    let globalCustomTags = { 0: [], 1: [], 2: [] };
+    let globalCustomTags = { 0: [], 1: [], 2: [] }; 
     
     // 初始化學生資料
     let studentsData = Array.from({ length: TOTAL_STUDENTS }).map((_, idx) => ({
@@ -233,10 +224,10 @@
       useErrorPronunciation: true,
       textInterpretation: '',
       useTextInterpretation: true,
-      generatedComment: '' // 純HTML版不產出內容，保留欄位供匯入匯出相容
+      generatedComment: ''
     }));
 
-    const TAG_CATEGORIES = [
+    let TAG_CATEGORIES = [
       {
         title: '語音 (45%)：發音、聲調、語調正確性',
         strengths: ['發音標準', '咬字清晰', '聲調正確', '語調自然', '破音字正確', '輕聲標準', '變調精準', '字正腔圓'],
@@ -254,9 +245,144 @@
       }
     ];
 
+    // === LocalStorage 自動存檔機制 ===
+    function autoSave() {
+      const dataToSave = {
+        studentsData,
+        customArticles,
+        globalCustomTags,
+        TAG_CATEGORIES
+      };
+      localStorage.setItem(LS_KEY, JSON.stringify(dataToSave));
+    }
+
+    function loadSavedData() {
+      const saved = localStorage.getItem(LS_KEY);
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (parsed.studentsData) studentsData = parsed.studentsData;
+          if (parsed.customArticles) customArticles = parsed.customArticles;
+          if (parsed.globalCustomTags) globalCustomTags = parsed.globalCustomTags;
+          if (parsed.TAG_CATEGORIES) TAG_CATEGORIES = parsed.TAG_CATEGORIES;
+        } catch (e) {
+          console.error("存檔解析失敗", e);
+        }
+      }
+    }
+
+    function clearLocalStorage() {
+      if (confirm('確定要清除所有資料與紀錄嗎？這會將系統還原到初始狀態。')) {
+        localStorage.removeItem(LS_KEY);
+        location.reload();
+      }
+    }
+
+    // === 標籤管理模式邏輯 ===
+    function toggleManageMode() {
+      isManageMode = !isManageMode;
+      const btn = document.getElementById('manageModeBtn');
+      const text = document.getElementById('manageModeText');
+      const articleSec = document.getElementById('articleSection');
+      
+      if (isManageMode) {
+        btn.classList.replace('bg-teal-50', 'bg-rose-500');
+        btn.classList.replace('hover:bg-teal-100', 'hover:bg-rose-600');
+        btn.classList.replace('text-teal-700', 'text-white');
+        btn.classList.replace('border-teal-200', 'border-rose-600');
+        text.textContent = '完成管理';
+        articleSec.classList.add('hidden'); // 隱藏篇目區以免畫面太長
+        showToast("✏️ 已進入標籤編輯模式，可直接調整。");
+      } else {
+        btn.classList.replace('bg-rose-500', 'bg-teal-50');
+        btn.classList.replace('hover:bg-rose-600', 'hover:bg-teal-100');
+        btn.classList.replace('text-white', 'text-teal-700');
+        btn.classList.replace('border-rose-600', 'border-teal-200');
+        text.textContent = '標籤管理';
+        articleSec.classList.remove('hidden');
+      }
+      renderTags();
+    }
+
+    function moveBaseTag(catIdx, type, tagIdx, direction) {
+      const arr = TAG_CATEGORIES[catIdx][type];
+      if (tagIdx + direction < 0 || tagIdx + direction >= arr.length) return;
+      const temp = arr[tagIdx];
+      arr[tagIdx] = arr[tagIdx + direction];
+      arr[tagIdx + direction] = temp;
+      autoSave();
+      renderTags();
+    }
+
+    function deleteBaseTag(catIdx, type, tagIdx) {
+      const deletedTag = TAG_CATEGORIES[catIdx][type][tagIdx];
+      TAG_CATEGORIES[catIdx][type].splice(tagIdx, 1);
+      studentsData.forEach(s => {
+        s.selectedTags = s.selectedTags.filter(t => t !== deletedTag);
+      });
+      autoSave();
+      renderTags();
+    }
+
+    function addBaseTag(catIdx, type) {
+      const input = document.getElementById(`newBaseTag_${catIdx}_${type}`);
+      const val = input.value.trim();
+      if (val && !TAG_CATEGORIES[catIdx][type].includes(val)) {
+        TAG_CATEGORIES[catIdx][type].push(val);
+        input.value = '';
+        autoSave();
+        renderTags();
+      }
+    }
+
+    function moveGlobalTagManage(catIdx, tagIdx, direction) {
+      const arr = globalCustomTags[catIdx];
+      if (tagIdx + direction < 0 || tagIdx + direction >= arr.length) return;
+      const temp = arr[tagIdx];
+      arr[tagIdx] = arr[tagIdx + direction];
+      arr[tagIdx + direction] = temp;
+      autoSave();
+      renderTags();
+    }
+
+    function deleteGlobalTagManage(catIdx, tagIdx) {
+      const deletedTag = globalCustomTags[catIdx][tagIdx];
+      globalCustomTags[catIdx].splice(tagIdx, 1);
+      studentsData.forEach(s => {
+        s.selectedTags = s.selectedTags.filter(t => t !== deletedTag);
+      });
+      autoSave();
+      renderTags();
+    }
+
+    function addGlobalTagManage(catIdx) {
+      const input = document.getElementById(`newManageTag_${catIdx}_global`);
+      const val = input.value.trim();
+      if (val && !globalCustomTags[catIdx].includes(val)) {
+        globalCustomTags[catIdx].push(val);
+        input.value = '';
+        autoSave();
+        renderTags();
+      }
+    }
+
+    // 渲染管理模式下的單一標籤元件
+    function renderEditTagHTML(tag, catIdx, type, tagIdx, themeConfig) {
+      return `
+        <div class="inline-flex items-center gap-1 ${themeConfig.bg} border ${themeConfig.border} pl-2 pr-1 py-1 rounded-md shadow-sm mb-2 mr-2">
+          <span class="text-xs sm:text-sm font-medium ${themeConfig.text} whitespace-nowrap">${tag}</span>
+          <div class="flex items-center bg-white rounded border ${themeConfig.btnBorder} ml-1">
+            <button onclick="${type === 'global' ? `moveGlobalTagManage(${catIdx}, ${tagIdx}, -1)` : `moveBaseTag(${catIdx}, '${type}', ${tagIdx}, -1)`}" class="p-1 text-slate-400 ${themeConfig.hover} border-r ${themeConfig.btnBorder}" title="往前"><i data-lucide="chevron-left" class="w-3 h-3"></i></button>
+            <button onclick="${type === 'global' ? `moveGlobalTagManage(${catIdx}, ${tagIdx}, 1)` : `moveBaseTag(${catIdx}, '${type}', ${tagIdx}, 1)`}" class="p-1 text-slate-400 ${themeConfig.hover} border-r ${themeConfig.btnBorder}" title="往後"><i data-lucide="chevron-right" class="w-3 h-3"></i></button>
+            <button onclick="${type === 'global' ? `deleteGlobalTagManage(${catIdx}, ${tagIdx})` : `deleteBaseTag(${catIdx}, '${type}', ${tagIdx})`}" class="p-1 text-slate-400 hover:text-rose-500" title="刪除"><i data-lucide="x" class="w-3 h-3"></i></button>
+          </div>
+        </div>
+      `;
+    }
+
+
     // === UI 渲染函數 ===
 
-    // 渲染左側名單
     function renderStudentList() {
       const container = document.getElementById('studentListContainer');
       let html = '';
@@ -280,7 +406,6 @@
       container.innerHTML = html;
     }
 
-    // 渲染主要工作區標頭與選填內容
     function renderMainHeader() {
       const student = studentsData[currentId - 1];
       document.getElementById('displayCurrentId').textContent = student.id;
@@ -289,7 +414,6 @@
       document.getElementById('inputName').value = student.name;
     }
 
-    // 渲染篇目選擇區
     function renderArticles() {
       const container = document.getElementById('articlesContainer');
       const student = studentsData[currentId - 1];
@@ -312,11 +436,20 @@
       container.innerHTML = html;
     }
 
-    // 渲染標籤區 (含計數器與補充欄位)
     function renderTags() {
       const container = document.getElementById('tagsContainer');
       const student = studentsData[currentId - 1];
       let html = '';
+
+      // 編輯模式頂部提示
+      if (isManageMode) {
+        html += `
+          <div class="bg-rose-50 border border-rose-200 text-rose-800 p-3 sm:p-4 rounded-xl mb-6 font-bold flex items-center gap-2 shadow-sm animate-fade-in-down">
+            <i data-lucide="alert-circle" class="w-5 h-5 flex-shrink-0"></i>
+            <span class="text-sm">目前為「標籤編輯模式」，請直接在此畫面增刪排序標籤。完成後請點擊右上角「完成管理」。</span>
+          </div>
+        `;
+      }
 
       TAG_CATEGORIES.forEach((category, idx) => {
         html += `<div class="pb-6 border-b border-emerald-100/60 last:border-0 last:pb-0">`;
@@ -324,94 +457,104 @@
         // 標題
         html += `
           <div class="flex items-center gap-4 mb-4">
-            <h3 class="text-sm font-bold text-emerald-800 bg-emerald-100 px-4 py-1.5 rounded-full whitespace-nowrap">${category.title}</h3>
-            <div class="flex-1 h-px bg-emerald-200/50"></div>
+            <h3 class="text-sm font-bold ${isManageMode ? 'text-rose-800 bg-rose-100' : 'text-emerald-800 bg-emerald-100'} px-4 py-1.5 rounded-full whitespace-nowrap transition-colors">${category.title}</h3>
+            <div class="flex-1 h-px ${isManageMode ? 'bg-rose-200' : 'bg-emerald-200/50'}"></div>
           </div>
         `;
 
-        // 優點 (綠色)
-        html += `<div class="space-y-3"><div class="flex flex-wrap gap-2">`;
-        category.strengths.forEach(tag => {
-          const isSelected = student.selectedTags.includes(tag);
-          const classes = isSelected ? 'bg-emerald-500 border-emerald-600 text-white font-bold shadow-sm' : 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100 hover:border-emerald-300';
-          html += `<button onclick="toggleTag('${tag}')" class="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm transition-all border ${classes}">${tag}</button>`;
-        });
-        html += `</div>`;
+        if (isManageMode) {
+          // --- 編輯模式 ---
+          html += `<div class="bg-slate-50 border border-slate-200 p-4 rounded-xl space-y-4">`;
+          
+          // 優點
+          const themeStr = { bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-900', btnBorder: 'border-emerald-100', hover: 'hover:text-emerald-600' };
+          html += `<div><span class="text-xs font-bold text-emerald-800 mb-2 block">優點標籤：</span><div class="flex flex-wrap">`;
+          category.strengths.forEach((tag, tagIdx) => { html += renderEditTagHTML(tag, idx, 'strengths', tagIdx, themeStr); });
+          html += `</div><div class="flex gap-2 mt-1"><input type="text" id="newBaseTag_${idx}_strengths" placeholder="新增優點..." onkeypress="if(event.key === 'Enter') addBaseTag(${idx}, 'strengths')" class="w-32 px-2 py-1.5 text-xs sm:text-sm border border-emerald-300 rounded outline-none focus:ring-1 focus:ring-emerald-500"><button onclick="addBaseTag(${idx}, 'strengths')" class="px-3 py-1.5 bg-emerald-500 text-white rounded text-xs sm:text-sm font-bold shadow-sm">新增</button></div></div>`;
+          
+          // 缺點
+          const themeWeak = { bg: 'bg-orange-50', border: 'border-orange-200', text: 'text-orange-900', btnBorder: 'border-orange-100', hover: 'hover:text-orange-600' };
+          html += `<div class="pt-2 border-t border-slate-200"><span class="text-xs font-bold text-orange-800 mb-2 block">缺點標籤：</span><div class="flex flex-wrap">`;
+          category.weaknesses.forEach((tag, tagIdx) => { html += renderEditTagHTML(tag, idx, 'weaknesses', tagIdx, themeWeak); });
+          html += `</div><div class="flex gap-2 mt-1"><input type="text" id="newBaseTag_${idx}_weaknesses" placeholder="新增缺點..." onkeypress="if(event.key === 'Enter') addBaseTag(${idx}, 'weaknesses')" class="w-32 px-2 py-1.5 text-xs sm:text-sm border border-orange-300 rounded outline-none focus:ring-1 focus:ring-orange-500"><button onclick="addBaseTag(${idx}, 'weaknesses')" class="px-3 py-1.5 bg-orange-500 text-white rounded text-xs sm:text-sm font-bold shadow-sm">新增</button></div></div>`;
 
-        // 缺點 (橘紅)
-        html += `<div class="flex flex-wrap gap-2">`;
-        category.weaknesses.forEach(tag => {
-          const isSelected = student.selectedTags.includes(tag);
-          const classes = isSelected ? 'bg-orange-100 border-orange-300 text-orange-800 font-bold shadow-sm' : 'bg-white border-orange-200 text-orange-600 hover:bg-orange-50 hover:border-orange-300';
-          html += `<button onclick="toggleTag('${tag}')" class="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm transition-all border ${classes}">${tag}</button>`;
-        });
-        html += `</div>`;
+          // 中性/自訂
+          const themeGlobal = { bg: 'bg-teal-50', border: 'border-teal-200', text: 'text-teal-900', btnBorder: 'border-teal-100', hover: 'hover:text-teal-600' };
+          html += `<div class="pt-2 border-t border-slate-200"><span class="text-xs font-bold text-teal-800 mb-2 block">中性/自訂標籤：</span><div class="flex flex-wrap">`;
+          (globalCustomTags[idx] || []).forEach((tag, tagIdx) => { html += renderEditTagHTML(tag, idx, 'global', tagIdx, themeGlobal); });
+          html += `</div><div class="flex gap-2 mt-1"><input type="text" id="newManageTag_${idx}_global" placeholder="新增中性標籤..." onkeypress="if(event.key === 'Enter') addGlobalTagManage(${idx})" class="w-32 px-2 py-1.5 text-xs sm:text-sm border border-teal-300 rounded outline-none focus:ring-1 focus:ring-teal-500"><button onclick="addGlobalTagManage(${idx})" class="px-3 py-1.5 bg-teal-500 text-white rounded text-xs sm:text-sm font-bold shadow-sm">新增</button></div></div>`;
+          
+          html += `</div>`;
 
-        // 全域自訂標籤 (藍綠)
-        if (globalCustomTags[idx] && globalCustomTags[idx].length > 0) {
-          html += `<div class="flex flex-wrap gap-2 pt-2">`;
-          globalCustomTags[idx].forEach(tag => {
+        } else {
+          // --- 正常評分模式 ---
+          html += `<div class="space-y-3"><div class="flex flex-wrap gap-2">`;
+          category.strengths.forEach(tag => {
             const isSelected = student.selectedTags.includes(tag);
-            const classes = isSelected ? 'bg-teal-100 border-teal-300 text-teal-800 font-bold shadow-sm' : 'bg-teal-50/40 border-teal-100 text-teal-700 hover:bg-teal-100 hover:border-teal-200';
-            html += `
-              <div class="relative group inline-block">
-                <button onclick="toggleTag('${tag}')" class="pr-8 pl-3 sm:pl-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm transition-all border ${classes}">${tag}</button>
-                <button onclick="removeGlobalCustomTag(${idx}, '${tag}')" class="absolute right-2 top-1/2 -translate-y-1/2 text-teal-400 hover:text-red-500 transition-colors p-1" title="刪除此標籤">
-                  <i data-lucide="trash-2" class="w-3 h-3"></i>
-                </button>
-              </div>`;
+            const classes = isSelected ? 'bg-emerald-500 border-emerald-600 text-white font-bold shadow-sm' : 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100 hover:border-emerald-300';
+            html += `<button onclick="toggleTag('${tag}')" class="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm transition-all border ${classes}">${tag}</button>`;
           });
           html += `</div>`;
-        }
 
-        // 新增全域標籤輸入框
-        html += `
-          <div class="flex gap-2 max-w-sm mt-2">
-            <input type="text" id="newTagInput_${idx}" placeholder="新增全域標籤..." onkeypress="if(event.key === 'Enter') addGlobalCustomTag(${idx})" class="flex-1 px-3 py-2 bg-white border border-teal-200 rounded-lg focus:ring-2 focus:ring-teal-300 outline-none text-xs text-slate-700">
-            <button onclick="addGlobalCustomTag(${idx})" class="px-3 bg-teal-500 hover:bg-teal-600 text-white rounded-lg flex items-center justify-center transition-colors text-xs font-medium shadow-sm">加入</button>
-          </div>
-        `;
+          html += `<div class="flex flex-wrap gap-2">`;
+          category.weaknesses.forEach(tag => {
+            const isSelected = student.selectedTags.includes(tag);
+            const classes = isSelected ? 'bg-orange-100 border-orange-300 text-orange-800 font-bold shadow-sm' : 'bg-white border-orange-200 text-orange-600 hover:bg-orange-50 hover:border-orange-300';
+            html += `<button onclick="toggleTag('${tag}')" class="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm transition-all border ${classes}">${tag}</button>`;
+          });
+          html += `</div>`;
 
-        // 向度 0 專屬：錯字計數器與誤讀紀錄
-        if (idx === 0) {
-          html += `
-            <div class="mt-4 p-3 bg-emerald-50/50 border border-emerald-100 rounded-xl relative">
-              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
-                <div class="flex items-center gap-3">
-                  <label class="text-xs font-bold text-emerald-700 flex items-center gap-1"><i data-lucide="plus" class="w-3 h-3"></i> 記錄錯誤讀音字詞</label>
-                  <div class="flex items-center gap-1.5 bg-white px-2 py-0.5 rounded border border-emerald-200 shadow-sm">
-                    <span class="text-xs font-bold text-slate-600 mr-1">錯字</span>
-                    <button onclick="updateErrorCount(-1)" class="w-5 h-5 flex items-center justify-center bg-slate-100 hover:bg-slate-200 rounded text-slate-600 transition-colors">-</button>
-                    <span class="text-xs font-bold w-4 text-center">${student.errorCount}</span>
-                    <button onclick="updateErrorCount(1)" class="w-5 h-5 flex items-center justify-center bg-rose-100 hover:bg-rose-200 text-rose-600 rounded transition-colors">+</button>
+          if (globalCustomTags[idx] && globalCustomTags[idx].length > 0) {
+            html += `<div class="flex flex-wrap gap-2 pt-2">`;
+            globalCustomTags[idx].forEach(tag => {
+              const isSelected = student.selectedTags.includes(tag);
+              const classes = isSelected ? 'bg-teal-500 border-teal-600 text-white font-bold shadow-sm' : 'bg-teal-50 border-teal-200 text-teal-700 hover:bg-teal-100 hover:border-teal-300';
+              html += `<button onclick="toggleTag('${tag}')" class="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm transition-all border ${classes}">${tag}</button>`;
+            });
+            html += `</div>`;
+          }
+
+          // 向度 0 專屬：錯字計數器
+          if (idx === 0) {
+            html += `
+              <div class="mt-4 p-3 bg-emerald-50/50 border border-emerald-100 rounded-xl relative">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                  <div class="flex items-center gap-3">
+                    <label class="text-xs font-bold text-emerald-700 flex items-center gap-1"><i data-lucide="plus" class="w-3 h-3"></i> 記錄錯誤讀音字詞</label>
+                    <div class="flex items-center gap-1.5 bg-white px-2 py-0.5 rounded border border-emerald-200 shadow-sm">
+                      <span class="text-xs font-bold text-slate-600 mr-1">錯字</span>
+                      <button onclick="updateErrorCount(-1)" class="w-5 h-5 flex items-center justify-center bg-slate-100 hover:bg-slate-200 rounded text-slate-600 transition-colors">-</button>
+                      <span class="text-xs font-bold w-4 text-center">${student.errorCount}</span>
+                      <button onclick="updateErrorCount(1)" class="w-5 h-5 flex items-center justify-center bg-rose-100 hover:bg-rose-200 text-rose-600 rounded transition-colors">+</button>
+                    </div>
                   </div>
+                  <label class="flex items-center gap-1.5 cursor-pointer text-xs text-slate-600 hover:text-emerald-700">
+                    <input type="checkbox" onchange="updateCurrentStudent('useErrorPronunciation', this.checked)" ${student.useErrorPronunciation ? 'checked' : ''} class="w-3.5 h-3.5 text-emerald-600 rounded border-emerald-300 focus:ring-emerald-500">
+                    將此欄位納入評語生成
+                  </label>
                 </div>
-                <label class="flex items-center gap-1.5 cursor-pointer text-xs text-slate-600 hover:text-emerald-700">
-                  <input type="checkbox" onchange="updateCurrentStudent('useErrorPronunciation', this.checked)" ${student.useErrorPronunciation ? 'checked' : ''} class="w-3.5 h-3.5 text-emerald-600 rounded border-emerald-300 focus:ring-emerald-500">
-                  將此欄位納入評語生成
-                </label>
+                <textarea oninput="updateCurrentStudent('errorPronunciation', this.value)" placeholder="例如：將「蘊」讀成「溫」、破音字「和」讀錯..." class="w-full px-3 py-2 text-sm border border-emerald-200 rounded-lg focus:ring-2 focus:ring-emerald-300 outline-none text-slate-700 resize-none h-12 bg-white">${student.errorPronunciation}</textarea>
               </div>
-              <textarea oninput="updateCurrentStudent('errorPronunciation', this.value)" placeholder="例如：將「蘊」讀成「溫」、破音字「和」讀錯..." class="w-full px-3 py-2 text-sm border border-emerald-200 rounded-lg focus:ring-2 focus:ring-emerald-300 outline-none text-slate-700 resize-none h-12 bg-white">${student.errorPronunciation}</textarea>
-            </div>
-          `;
-        }
+            `;
+          }
 
-        // 向度 1 專屬：文本詮釋
-        if (idx === 1) {
-          html += `
-            <div class="mt-4 p-3 bg-emerald-50/50 border border-emerald-100 rounded-xl relative">
-              <div class="flex items-center justify-between mb-2">
-                <label class="text-xs font-bold text-emerald-700 flex items-center gap-1"><i data-lucide="plus" class="w-3 h-3"></i> 文本詮釋細節補充</label>
-                <label class="flex items-center gap-1.5 cursor-pointer text-xs text-slate-600 hover:text-emerald-700">
-                  <input type="checkbox" onchange="updateCurrentStudent('useTextInterpretation', this.checked)" ${student.useTextInterpretation ? 'checked' : ''} class="w-3.5 h-3.5 text-emerald-600 rounded border-emerald-300 focus:ring-emerald-500">
-                  將此欄位納入評語生成
-                </label>
+          // 向度 1 專屬：文本詮釋
+          if (idx === 1) {
+            html += `
+              <div class="mt-4 p-3 bg-emerald-50/50 border border-emerald-100 rounded-xl relative">
+                <div class="flex items-center justify-between mb-2">
+                  <label class="text-xs font-bold text-emerald-700 flex items-center gap-1"><i data-lucide="plus" class="w-3 h-3"></i> 文本詮釋細節補充</label>
+                  <label class="flex items-center gap-1.5 cursor-pointer text-xs text-slate-600 hover:text-emerald-700">
+                    <input type="checkbox" onchange="updateCurrentStudent('useTextInterpretation', this.checked)" ${student.useTextInterpretation ? 'checked' : ''} class="w-3.5 h-3.5 text-emerald-600 rounded border-emerald-300 focus:ring-emerald-500">
+                    將此欄位納入評語生成
+                  </label>
+                </div>
+                <textarea oninput="updateCurrentStudent('textInterpretation', this.value)" placeholder="例如：第三段高潮處語氣不夠激昂、結尾段落餘韻不足..." class="w-full px-3 py-2 text-sm border border-emerald-200 rounded-lg focus:ring-2 focus:ring-emerald-300 outline-none text-slate-700 resize-none h-16 bg-white">${student.textInterpretation}</textarea>
               </div>
-              <textarea oninput="updateCurrentStudent('textInterpretation', this.value)" placeholder="例如：第三段高潮處語氣不夠激昂、結尾段落餘韻不足..." class="w-full px-3 py-2 text-sm border border-emerald-200 rounded-lg focus:ring-2 focus:ring-emerald-300 outline-none text-slate-700 resize-none h-16 bg-white">${student.textInterpretation}</textarea>
-            </div>
-          `;
+            `;
+          }
         }
-
+        
         html += `</div></div>`;
       });
 
@@ -419,7 +562,6 @@
       lucide.createIcons();
     }
 
-    // 更新整個畫面
     function renderAll() {
       renderStudentList();
       renderMainHeader();
@@ -427,76 +569,54 @@
       renderTags();
     }
 
-    // === 互動與業務邏輯 ===
-
-    // 設定當前選手
+    // === 互動邏輯 ===
     function setCurrentId(id) {
+      if(isManageMode) toggleManageMode(); // 切換選手時強制退出編輯模式
       currentId = id;
       renderAll();
     }
 
-    // 更新當前選手資料屬性
     function updateCurrentStudent(key, value) {
       const student = studentsData[currentId - 1];
       student[key] = value;
       if (key === 'classId' || key === 'name') renderStudentList();
+      autoSave();
     }
 
-    // 切換標籤選取
     function toggleTag(tag) {
+      if (isManageMode) return; // 編輯模式下不允許點選標籤
       const student = studentsData[currentId - 1];
       if (student.selectedTags.includes(tag)) {
         student.selectedTags = student.selectedTags.filter(t => t !== tag);
       } else {
         student.selectedTags.push(tag);
       }
-      renderStudentList(); // 為了更新左側亮點
+      autoSave();
+      renderStudentList();
       renderMainHeader();
       renderTags();
     }
 
-    // 更新錯字計數
     function updateErrorCount(delta) {
       const student = studentsData[currentId - 1];
       student.errorCount = Math.max(0, student.errorCount + delta);
+      autoSave();
       renderStudentList();
       renderTags();
     }
 
-    // 新增篇目
     function addCustomArticle() {
       const input = document.getElementById('newArticleInput');
       const val = input.value.trim();
       if (val && !customArticles.includes(val)) {
         customArticles.push(val);
         input.value = '';
+        autoSave();
         renderArticles();
         showToast("已新增全域朗讀篇目");
       }
     }
 
-    // 新增全域標籤
-    function addGlobalCustomTag(idx) {
-      const input = document.getElementById(`newTagInput_${idx}`);
-      const val = input.value.trim();
-      if (val && !globalCustomTags[idx].includes(val)) {
-        globalCustomTags[idx].push(val);
-        input.value = '';
-        renderTags();
-        showToast("已新增專屬全域標籤");
-      }
-    }
-
-    // 移除全域標籤
-    function removeGlobalCustomTag(idx, tag) {
-      globalCustomTags[idx] = globalCustomTags[idx].filter(t => t !== tag);
-      studentsData.forEach(s => {
-        s.selectedTags = s.selectedTags.filter(t => t !== tag);
-      });
-      renderAll();
-    }
-
-    // === Modal 與 Toast 功能 ===
     function showToast(msg) {
       const toast = document.getElementById('toast');
       document.getElementById('toastMessage').textContent = msg;
@@ -512,19 +632,20 @@
       document.getElementById('aiModal').classList.add('hidden');
     }
 
-    // === 匯入/匯出/PDF 功能 ===
+    // === 匯出與匯入 ===
     function exportData() {
       const data = {
         version: 'HTML_2.2',
         customArticles,
         globalCustomTags,
+        TAG_CATEGORIES,
         studentsData
       };
       const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `朗讀評語設定檔_純紀錄版_${new Date().toISOString().slice(0,10)}.json`;
+      a.download = `朗讀評語設定檔_快記版2.2_${new Date().toISOString().slice(0,10)}.json`;
       a.click();
       showToast("已下載設定檔");
     }
@@ -539,6 +660,8 @@
           if (data.studentsData) studentsData = data.studentsData;
           if (data.globalCustomTags) globalCustomTags = data.globalCustomTags;
           if (data.customArticles) customArticles = data.customArticles;
+          if (data.TAG_CATEGORIES) TAG_CATEGORIES = data.TAG_CATEGORIES;
+          autoSave();
           renderAll();
           showToast("資料匯入成功！");
         } catch (err) {
@@ -546,7 +669,7 @@
         }
       };
       reader.readAsText(file);
-      e.target.value = null; // reset
+      e.target.value = null; 
     }
 
     function exportToPDF() {
@@ -588,7 +711,7 @@
               <strong style="color: #047857;">列印提示：</strong> 請在列印對話框中，將目的地選項更改為<strong>「另存為 PDF (Save as PDF)」</strong>即可完美匯出。
               <button onclick="window.print()" style="margin-left: 15px; padding: 6px 12px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer;">立即列印 / 存為 PDF</button>
             </div>
-            <h1>國語朗讀評語總表 (紀錄版)</h1>
+            <h1>國語朗讀評語總表 (快記版)</h1>
             <table>
               <thead>
                 <tr>
@@ -628,6 +751,7 @@
 
     // 啟動初始化
     document.getElementById('currentYear').textContent = new Date().getFullYear();
+    loadSavedData();
     renderAll();
     lucide.createIcons();
 
